@@ -27,6 +27,8 @@
 static int port;
 static char p[1];
 
+
+/*This is to handle if the player wants to play again*/
 void play_again(){
 	
 	while(1){
@@ -42,44 +44,47 @@ void play_again(){
 }
 
 int main(int argc, char **argv) {
-    char message[1], reply[1024];
-       
+    char message[1], reply[1024];       
     
     int client_socket;
-    //char message[2048];
+    
     struct sockaddr_in server_address;
-    //struct sockaddr_storage server_storage;
+    
     socklen_t address_size;    
     
+    //Scan the port and assign it to a variable
     sscanf(argv[1],"%d", &port);
-    //sscanf(argv[2],"%s", &IP);
-    client_socket = socket(PF_INET,SOCK_STREAM,0);
+    
+    //Create the socket for connecting to server     
+    client_socket = socket(PF_INET, SOCK_STREAM,0);
+    
     if(client_socket==-1){
     	puts("\nFailed to create client socket.");
     	return 1;
     }
     
+    //Set up server_address things
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(port);    
     server_address.sin_addr.s_addr = inet_addr(argv[2]);
     
-    memset(server_address.sin_zero,'\0',sizeof(server_address.sin_zero));    
-    
+    //Create the variable because I am lazy.
     address_size = sizeof(server_address);
     
+    //Error checking the connection
     if(connect(client_socket,(struct sockaddr *) &server_address, address_size) < 0){
     	puts("\nFailed to connect to server.");
     	return 1;
     }
-/*    else*/
-/*    	printf("\nConnected to server.\n");        */
     
-    
+    //While loop for the duration of the game.
     while(1){    
     
 		printf("Please type S for Silent, or B for Betray: ");
 		scanf("%s", message);
 		
+		//Initial tomfoolery to compare characters. I have yet to change it.
+		//Also interprets player input, and repeats if it is incorrect input.
 		while(1){    	
 			if((tolower(message[0])-tolower('s')) == 0){
 				printf("\nYou have chosen to remain Silent. ");
@@ -96,16 +101,16 @@ int main(int argc, char **argv) {
 		scanf("%s", message);	
 			}
 		}
-		//strcpy(message, "This is the client sending things.");
 		
+		//Error checking if the message is sent to server.
 		if(send(client_socket, message, sizeof(message), 0) < 0){
 			puts("Send failed");
 			return 1;    
 		}
 		else    
 			printf("Your choice is being processed.\n");   
-		//fflush(stdout); 
-		
+		 
+		//Error checking for receiving a reply from server.
 		if(recv(client_socket, reply, sizeof(reply), 0) <= 0){
 		    printf("No data received from server.\n");
 			return 1;
@@ -120,7 +125,7 @@ int main(int argc, char **argv) {
     	if(strcasecmp(p, "n") == 0)
     		break;
     	else{    		
-    		
+    		//Error checking to send a request to play again.
     		if(send(client_socket, p, sizeof(p), 0) <= 0){
     			puts("Failed to send game request to server. Goodbye.");
     			return 1;
@@ -129,7 +134,7 @@ int main(int argc, char **argv) {
     }
     
     puts("Thanks for playing!");
-    //close(client_socket);
+    close(client_socket);
     return 0;
 }
 
